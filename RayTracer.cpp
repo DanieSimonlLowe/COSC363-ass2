@@ -26,6 +26,7 @@ const float XMAX = 10.0;
 const float YMIN = -10.0;
 const float YMAX = 10.0;
 const float ZERO = 0.001;
+const glm::vec3 lightPos(10, 5, -3);					//Light's position
 
 vector<SceneObject*> sceneObjects;
 
@@ -40,7 +41,7 @@ glm::vec3 trace(Ray ray, int step)
     if (step >= MAX_STEPS) {
         return backgroundCol; //defult color
     }
-	glm::vec3 lightPos(10, 40, -3);					//Light's position
+
 	glm::vec3 color(0);
 	SceneObject* obj;
 
@@ -103,6 +104,11 @@ glm::vec3 trace(Ray ray, int step)
 	return color;
 }
 
+
+//glm::vec3 traceShadow(Ray ray, int step) {
+
+//}
+
 float calculateColorDiffSqear(glm::vec3 colorA, glm::vec3 colorB) {
     float diffR = colorA.r - colorB.r;
     float diffB = colorA.b - colorB.b;
@@ -150,7 +156,7 @@ void display()
 	float xp, yp;  //grid point
 	float cellX = (XMAX - XMIN) / NUMDIV;  //cell width
 	float cellY = (YMAX - YMIN) / NUMDIV;  //cell height
-	glm::vec3 eye(0., 0., 0.);
+    glm::vec3 eye(5, 0., 20);
 
     glm::vec3 cols[NUMDIV][NUMDIV] = {};
 
@@ -255,7 +261,7 @@ void initialize()
     sphereb->setShininess(5);
     sceneObjects.push_back(sphereb);		 //Add sphere to scene objects
 
-    Sphere *sphere1 = new Sphere(glm::vec3(-5.0, 0.0, -90.0), 15.0);
+    Sphere *sphere1 = new Sphere(glm::vec3(-5.0, 0.0, -90.0), 1.0);
     sphere1->setColor(glm::vec3(0, 0, 1));   //Set colour to blue
     sphere1->setSpecularity(false);
     sphere1->setReflectivity(true,0.5);
@@ -267,6 +273,37 @@ void initialize()
                              glm::vec3(-20,-15,-200));
     floorPlane->setColor(glm::vec3(0.8,0.8,0));
     sceneObjects.push_back(floorPlane);
+
+    Plane *ceilingPlane = new Plane(glm::vec3(-20,20,-40),
+                             glm::vec3(20,20,-40),
+                             glm::vec3(20,20,-200),
+                             glm::vec3(-20,20,-200));
+    ceilingPlane->setColor(glm::vec3(0.8,0.8,0));
+    sceneObjects.push_back(ceilingPlane);
+
+    Plane *leftPlane = new Plane(glm::vec3(-20,20,-40),
+                             glm::vec3(-20,-15,-40),
+                             glm::vec3(-20,-15,-200),
+                             glm::vec3(-20,20,-200));
+    leftPlane->setColor(glm::vec3(0.8,0.8,0));
+    sceneObjects.push_back(leftPlane);
+
+    Plane *rightPlane = new Plane(glm::vec3(20,20,-40),
+                             glm::vec3(20,20,-200),
+                             glm::vec3(20,-15,-200),
+                             glm::vec3(20,-15,-40)
+                                  );
+    rightPlane->setColor(glm::vec3(0.8,0.8,0));
+    rightPlane->setReflectivity(true,1.0);
+    sceneObjects.push_back(rightPlane);
+
+
+    Plane *farPlane = new Plane(glm::vec3(-20,20,-200),
+                                glm::vec3(20,20,-200),
+                                glm::vec3(20,-15,-200),
+                                glm::vec3(-20,-15,-200));
+    farPlane->setColor(glm::vec3(1,1,1));
+    sceneObjects.push_back(farPlane);
 }
 
 
