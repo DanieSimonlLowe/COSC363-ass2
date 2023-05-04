@@ -20,23 +20,30 @@ using namespace std;
 
 const float EDIST = 40.0;
 const int NUMDIV = 500;
-const int MAX_STEPS = 5;
+const int MAX_STEPS = 7;
 const float XMIN = -10.0;
 const float XMAX = 10.0;
 const float YMIN = -10.0;
 const float YMAX = 10.0;
 const float ZERO = 0.001;
-const glm::vec3 lightPos(10, 5, -3);					//Light's position
+
 
 vector<SceneObject*> sceneObjects;
+const glm::vec3 lightPos(15, 20, 30);					//Light's position
 
+
+glm::vec3 trace(Ray ray, int step);
 
 //---The most important function in a ray tracer! ---------------------------------- 
 //   Computes the colour value obtained by tracing a ray and finding its 
 //     closest point of intersection with objects in the scene.
 //----------------------------------------------------------------------------------
-glm::vec3 trace(Ray ray, int step)
+glm::vec3 trace(Ray ray, int step, bool hasRefrac)
 {
+
+    const glm::vec3 fogColor(0.36,0.73,0.16);
+    const float fogDist = 220;
+    const float diffZ = 20;
 	glm::vec3 backgroundCol(0);						//Background colour = (0,0,0)
     if (step >= MAX_STEPS) {
         return backgroundCol; //defult color
@@ -46,7 +53,7 @@ glm::vec3 trace(Ray ray, int step)
 	SceneObject* obj;
 
     ray.closestPt(sceneObjects);					//Compare the ray with all objects in the scene
-    if(ray.index == -1) return backgroundCol;		//no intersection
+    if(ray.index == -1) return fogColor;		//no intersection
 	obj = sceneObjects[ray.index];					//object on which the closest point of intersection is found
     if (ray.index == 4)
     {
@@ -60,6 +67,9 @@ glm::vec3 trace(Ray ray, int step)
             color = glm::vec3(0.5,0.5,0.5);
         }
         obj->setColor(color);
+    } else if (ray.index == 5) {
+        float fogCof = (abs(ray.hit.z - diffZ) / fogDist);
+        return fogCof * fogColor + (1.0f-fogCof) * obj->getColor();
     }
 
     //(glm::vec3 lightPos, glm::vec3 viewVec, glm::vec3 hit)
@@ -67,14 +77,13 @@ glm::vec3 trace(Ray ray, int step)
     color = obj->lighting(lightPos,viewVec,ray.hit);						//Object's colour
 
     if (obj->isTransparent()) {
-        glm::vec3 tranVec = ray.hit + ray.dir;
-        Ray tranRay(tranVec,ray.dir);
-        glm::vec3 colorTrans = obj->getTransparencyCoeff()*trace(tranRay,step + 1);
+        Ray tranRay(ray.hit+0.1f*ray.dir,ray.dir);
+        float coeff = obj->getTransparencyCoeff();
+        glm::vec3 colorTrans = coeff*trace(tranRay,step + 1);
         color = color+colorTrans;
     }
 
     if (obj->isReflective()) {
-        //glm::vec3 relVec = ray.hit;
         glm::vec3 relDir = glm::reflect(ray.dir,obj->normal(ray.hit));
         Ray relRay(ray.hit,relDir);
         glm::vec3 colorRel = obj->getReflectionCoeff()*trace(relRay,step + 1);
@@ -82,32 +91,43 @@ glm::vec3 trace(Ray ray, int step)
     }
 
     if (obj->isRefractive()) {
-        glm::vec3 refVec = ray.hit - 0.1f * ray.dir;
-        glm::vec3 refDir = glm::refract(ray.dir,obj->normal(ray.hit),obj->getRefractiveIndex());
-        Ray refRay(refVec,refDir);
-        glm::vec3 colorRel = obj->getReflectionCoeff()*trace(refRay,step + 1);
+        glm::vec3 refDir;
+        if (hasRefrac) {
+            refDir = glm::refract(ray.dir,-1.0f*obj->normal(ray.hit),1.0f/obj->getRefractiveIndex());
+        } else {
+            refDir = glm::refract(ray.dir,obj->normal(ray.hit),obj->getRefractiveIndex());
+        }
+        Ray refRay(ray.hit,refDir);
+        glm::vec3 colorRel = obj->getReflectionCoeff()*trace(refRay,step + 1, !hasRefrac);
         color = color + colorRel;
     }
 
     glm::vec3 lightVec = lightPos - ray.hit;
     Ray shadowRay(ray.hit,lightVec);
     shadowRay.closestPt(sceneObjects);
-    if (shadowRay.index != -1) {
-        if (sceneObjects[shadowRay.index]->isTransparent()) { //TODO add trans shadows recursion
-            float coefficant = 0.2f + 0.8f * obj->getTransparencyCoeff();
-            color = coefficant * color;
-        } else {
-            color = 0.2f * color;
+    if (shadowRay.index != 5) {
+        float mult = 0.2;
+        SceneObject* shObj;
+        shObj = sceneObjects[shadowRay.index];
+        if (shObj->isTransparent()) { // do refraction
+            mult += (0.8-mult)*shObj->getTransparencyCoeff();
         }
+        if (shObj->isRefractive()) { // do refraction
+            mult += (0.8-mult)*shObj->getRefractionCoeff();
+        }
+        color = color * mult;
     }
+
+    float fogCof = (abs(ray.hit.z - diffZ) / fogDist);
+    color = fogCof * fogColor + (1.0f-fogCof) * color;
+
 
 	return color;
 }
 
-
-//glm::vec3 traceShadow(Ray ray, int step) {
-
-//}
+glm::vec3 trace(Ray ray, int step) {
+    return trace(ray,step,false);
+}
 
 float calculateColorDiffSqear(glm::vec3 colorA, glm::vec3 colorB) {
     float diffR = colorA.r - colorB.r;
@@ -249,61 +269,80 @@ void initialize()
 
     Sphere *spherer = new Sphere(glm::vec3(7.0, 5.0, -70.0), 3.0);
     spherer->setColor(glm::vec3(1, 0, 0));   //Set colour to red
-    spherer->setTransparency(true,0.8);
+    spherer->setTransparency(true,0.8f);
     sceneObjects.push_back(spherer);		 //Add sphere to scene objects
 
     Sphere *sphereg = new Sphere(glm::vec3(7.0, -9.0, -70.0), 6.5);
-    sphereg->setColor(glm::vec3(0.2, 1, 0.2));   //Set colour to green
+    sphereg->setColor(glm::vec3(0.25, 0.25, 0.25));   //Set colour to green
+    sphereg->setRefractivity(true,1.0,0.98);
+    //sphereg->setReflectivity(true,0.01);
     sceneObjects.push_back(sphereg);		 //Add sphere to scene objects
+
 
     Sphere *sphereb = new Sphere(glm::vec3(13.0, 13.0, -70.0), 3.0);
     sphereb->setColor(glm::vec3(0.6, 0.95, 1));   //Set colour to red
     sphereb->setShininess(5);
     sceneObjects.push_back(sphereb);		 //Add sphere to scene objects
 
-    Sphere *sphere1 = new Sphere(glm::vec3(-5.0, 0.0, -90.0), 1.0);
+    Sphere *sphere1 = new Sphere(glm::vec3(-5.0, 0.0, -90.0), 12.0);
     sphere1->setColor(glm::vec3(0, 0, 1));   //Set colour to blue
     sphere1->setSpecularity(false);
     sphere1->setReflectivity(true,0.5);
     sceneObjects.push_back(sphere1);		 //Add sphere to scene objects
 
-    Plane *floorPlane = new Plane(glm::vec3(-20,-15,-40),
-                             glm::vec3(20,-15,-40),
+    Plane *floorPlane = new Plane(glm::vec3(-20,-15,40),
+                             glm::vec3(20,-15,40),
                              glm::vec3(20,-15,-200),
                              glm::vec3(-20,-15,-200));
     floorPlane->setColor(glm::vec3(0.8,0.8,0));
     sceneObjects.push_back(floorPlane);
 
-    Plane *ceilingPlane = new Plane(glm::vec3(-20,20,-40),
-                             glm::vec3(20,20,-40),
+    Sphere *light = new Sphere(lightPos, 5);
+    light->setColor(glm::vec3(1,1,1));
+    sceneObjects.push_back(light);
+
+    Plane *ceilingPlane = new Plane(glm::vec3(-20,20,40),
+                             glm::vec3(20,20,40),
                              glm::vec3(20,20,-200),
                              glm::vec3(-20,20,-200));
     ceilingPlane->setColor(glm::vec3(0.8,0.8,0));
     sceneObjects.push_back(ceilingPlane);
 
-    Plane *leftPlane = new Plane(glm::vec3(-20,20,-40),
-                             glm::vec3(-20,-15,-40),
+    Plane *leftPlane = new Plane(glm::vec3(-20,20,40),
+                             glm::vec3(-20,-15,40),
                              glm::vec3(-20,-15,-200),
                              glm::vec3(-20,20,-200));
     leftPlane->setColor(glm::vec3(0.8,0.8,0));
     sceneObjects.push_back(leftPlane);
 
-    Plane *rightPlane = new Plane(glm::vec3(20,20,-40),
+    Plane *rightPlane = new Plane(glm::vec3(20,20,40),
                              glm::vec3(20,20,-200),
                              glm::vec3(20,-15,-200),
-                             glm::vec3(20,-15,-40)
+                             glm::vec3(20,-15,40)
                                   );
-    rightPlane->setColor(glm::vec3(0.8,0.8,0));
+    rightPlane->setColor(glm::vec3(0,0,0));
     rightPlane->setReflectivity(true,1.0);
     sceneObjects.push_back(rightPlane);
 
 
-    Plane *farPlane = new Plane(glm::vec3(-20,20,-200),
-                                glm::vec3(20,20,-200),
-                                glm::vec3(20,-15,-200),
-                                glm::vec3(-20,-15,-200));
-    farPlane->setColor(glm::vec3(1,1,1));
+    Plane *farPlane = new Plane(
+                glm::vec3(-20,-15,-200),
+                glm::vec3(20,-15,-200),
+                glm::vec3(20,20,-200),
+                glm::vec3(-20,20,-200)
+                                );
+    farPlane->setColor(glm::vec3(0.8,0.8,0));
     sceneObjects.push_back(farPlane);
+
+    Plane *backPlane = new Plane(
+                glm::vec3(-20,20,40),
+                glm::vec3(20,20,40),
+                glm::vec3(20,-15,40),
+                glm::vec3(-20,-15,40));
+    backPlane->setColor(glm::vec3(0.8,0.8,0));
+    sceneObjects.push_back(backPlane);
+
+
 }
 
 
