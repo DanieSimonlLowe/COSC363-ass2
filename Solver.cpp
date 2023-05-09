@@ -32,8 +32,8 @@ float changeVal(float c0, float c1, float c2, float c3, float c4, float x, float
 }*/
 
 float getSmallistSol(float c0, float c1, float c2, float c3, float c4) {
-    double c[] = {c0,c1,c2,c3,c4};
-    double s[4];
+    float c[] = {c0,c1,c2,c3,c4};
+    float s[4];
     int count = SolveQuartic(c,s);
 
     if (count == 0) {

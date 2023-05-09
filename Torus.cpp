@@ -73,9 +73,10 @@ float Torus::intersect(glm::vec3 p0, glm::vec3 dir)
 */
 glm::vec3 Torus::normal(glm::vec3 p)
 {
-    float x = p.x - center.x;
-    float y = p.y - center.y;
-    float z = p.z - center.z;
+    const glm::vec3 p0 = p - center;
+    float x = p0.x;
+    float y = p0.y;
+    float z = p0.z;
 
     float sumSquared = x * x + y * y + z * z;
 

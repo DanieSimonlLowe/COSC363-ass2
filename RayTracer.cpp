@@ -299,7 +299,7 @@ void initialize()
     sceneObjects.push_back(sphereg);		 //Add sphere to scene objects
 
 
-    Torus *sphereb = new Torus(glm::vec3(13.0, 13.0, -70.0), 10.0, 5.0);
+    Torus *sphereb = new Torus(glm::vec3(0.0, 13.0, -70.0), 10.0, 1.0);
     sphereb->setColor(glm::vec3(0.6, 0.95, 1));   //Set colour to white
     sphereb->setShininess(5);
     sceneObjects.push_back(sphereb);		 //Add sphere to scene objects
