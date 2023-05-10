@@ -31,13 +31,10 @@
 
 /* epsilon surrounding for near zero values */
 
-#define     EQN_EPS     1e-9
+#define     EQN_EPS     1e-4
 #define	    IsZero(x)	((x) > -EQN_EPS && (x) < EQN_EPS)
 
-#ifdef NOCBRT
-#define     cbrt(x)     ((x) > 0.0 ? pow((float)(x), 1.0/3.0) : \
-                          ((x) < 0.0 ? -pow((float)-(x), 1.0/3.0) : 0.0))
-#endif
+
 
 int SolveQuadric(float c[3], float s[2])
 {

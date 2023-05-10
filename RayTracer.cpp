@@ -225,9 +225,9 @@ void display()
         for (int j = 0; j < NUMDIV; j++)
         {
             if (shouldAntiAlias(cols,i,j)) {
-                float sumR = cols[i][j].r;
-                float sumG = cols[i][j].g;
-                float sumB = cols[i][j].b;
+                float sumR = 0;
+                float sumG = 0;
+                float sumB = 0;
                 for (int k = 0; k < 2; k++) {
                     xp = XMIN + i * cellX + k * cellX*0.5;
                     for (int l = 0; l < 2; l++) {
@@ -241,7 +241,7 @@ void display()
                         sumB += col.b;
                     }
                 }
-                disCols[i][j] = glm::vec3(sumR*0.2,sumG*0.2,sumB*0.2);
+                disCols[i][j] = glm::vec3(sumR*0.25,sumG*0.25,sumB*0.25);
 
             } else {
                 disCols[i][j] = cols[i][j];
@@ -299,7 +299,7 @@ void initialize()
     sceneObjects.push_back(sphereg);		 //Add sphere to scene objects
 
 
-    Torus *sphereb = new Torus(glm::vec3(0.0, 13.0, -70.0), 10.0, 1.0);
+    Torus *sphereb = new Torus(glm::vec3(0.0, 13.0, -70.0), 15.0, 1.0);
     sphereb->setColor(glm::vec3(0.6, 0.95, 1));   //Set colour to white
     sphereb->setShininess(5);
     sceneObjects.push_back(sphereb);		 //Add sphere to scene objects
