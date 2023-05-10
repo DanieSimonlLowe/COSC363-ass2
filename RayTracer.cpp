@@ -78,17 +78,13 @@ glm::vec3 trace(Ray ray, int step, bool hasRefrac)
         float dist = pow(ray.hit.x - centerX,2) + pow(ray.hit.z - centerZ,2);
         int temp = sqrt(dist)/tileSize;
         int k = temp % 3;
+        float ram = (sqrt(dist) / (float)tileSize) - temp;
         if (k == 0) {
-            color = glm::vec3(1,0.5,0.5);
+            color = (1-ram) * glm::vec3(1,0.5,0.5) + (ram) * glm::vec3(0.5,1,0.5);
         } else if (k==1) {
-            color = glm::vec3(0.5,1,0.5);
+            color = (1-ram) * glm::vec3(0.5,1,0.5) + (ram) * glm::vec3(0.5,0.5,1);
         } else {
-            color = glm::vec3(0.5,0.5,1);
-        }
-        if (temp % 13 == 0) {
-            color = glm::vec3(0,0,0);
-        } else if (temp % 7 == 0) {
-            color = glm::vec3(1,1,1);
+            color = (1-ram) * glm::vec3(0.5,0.5,1) + (ram) * glm::vec3(1,0.5,0.5);
         }
         obj->setColor(color);
     }
@@ -306,7 +302,6 @@ void initialize()
 
     Sphere *sphere1 = new Sphere(glm::vec3(-5.0, 0.0, -90.0), 12.0);
     sphere1->setColor(glm::vec3(0, 0, 1));   //Set colour to blue
-    sphere1->setSpecularity(false);
     sphere1->setReflectivity(true,0.5);
     sceneObjects.push_back(sphere1);		 //Add sphere to scene objects
 
@@ -352,7 +347,8 @@ void initialize()
                 glm::vec3(20,20,-200),
                 glm::vec3(-20,20,-200)
                                 );
-    farPlane->setColor(glm::vec3(0,0,0));
+    farPlane->setColor(glm::vec3(0.5,0.5,0.5));
+    farPlane->setSpecularity(false);
     sceneObjects.push_back(farPlane);
 
     Plane *backPlane = new Plane(
@@ -360,7 +356,8 @@ void initialize()
                 glm::vec3(20,20,40),
                 glm::vec3(20,-15,40),
                 glm::vec3(-20,-15,40));
-    backPlane->setColor(glm::vec3(0,0,0));
+    backPlane->setColor(glm::vec3(0.5,0.5,0.5));
+    backPlane->setSpecularity(false);
     sceneObjects.push_back(backPlane);
 
 
