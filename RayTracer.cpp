@@ -21,7 +21,7 @@ using namespace std;
 
 const float EDIST = 40.0;
 const int NUMDIV = 500;
-const int MAX_STEPS = 7;
+const int MAX_STEPS = 5;
 const float XMIN = -10.0;
 const float XMAX = 10.0;
 const float YMIN = -10.0;
@@ -74,19 +74,21 @@ glm::vec3 trace(Ray ray, int step, bool hasRefrac)
     } else if (ray.index == 6) {
         const float centerX = 5;
         const float centerZ = -100;
+        const float intensity = 0.2;
+        const float minIntensity = 1;
         const int tileSize = 3;
-        float dist = pow(ray.hit.x - centerX,2) + pow(ray.hit.z - centerZ,2);
-        int temp = sqrt(dist)/tileSize;
+        float dist = sqrt(pow(ray.hit.x - centerX,2) + pow(ray.hit.z - centerZ,2));
+        int temp = dist/tileSize;
         int k = temp % 3;
-        float ram = (sqrt(dist) / (float)tileSize) - temp;
+        float ram = (dist / (float)tileSize) - temp;
         if (k == 0) {
-            color = (1-ram) * glm::vec3(1,0.5,0.5) + (ram) * glm::vec3(0.5,1,0.5);
+            color = (1-ram) * glm::vec3(1,0.0,0.0) + (ram) * glm::vec3(0.0,1,0.0);
         } else if (k==1) {
-            color = (1-ram) * glm::vec3(0.5,1,0.5) + (ram) * glm::vec3(0.5,0.5,1);
+            color = (1-ram) * glm::vec3(0.0,1,0.0) + (ram) * glm::vec3(0.0,0.0,1);
         } else {
-            color = (1-ram) * glm::vec3(0.5,0.5,1) + (ram) * glm::vec3(1,0.5,0.5);
+            color = (1-ram) * glm::vec3(0.0,0.0,1) + (ram) * glm::vec3(1,0.0,0.0);
         }
-        obj->setColor(color);
+        obj->setColor((intensity * dist + minIntensity) * color);
     }
 
     //(glm::vec3 lightPos, glm::vec3 viewVec, glm::vec3 hit)
