@@ -157,7 +157,6 @@ float calculateColorDiffSqear(glm::vec3 colorA, glm::vec3 colorB) {
 
 const float minSqearDiff = 0.01;
 bool shouldAntiAlias(glm::vec3 cols[NUMDIV][NUMDIV], int i, int j) {
-
     glm::vec3 color = cols[i][j];
     if (i > 0 && calculateColorDiffSqear(color,cols[i-1][j]) > minSqearDiff) {
         return true;
