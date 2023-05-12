@@ -155,8 +155,9 @@ float calculateColorDiffSqear(glm::vec3 colorA, glm::vec3 colorB) {
     return diffR * diffR + diffB * diffB + diffG * diffG;
 }
 
+const float minSqearDiff = 0.01;
 bool shouldAntiAlias(glm::vec3 cols[NUMDIV][NUMDIV], int i, int j) {
-    const float minSqearDiff = 0.01;
+
     glm::vec3 color = cols[i][j];
     if (i > 0 && calculateColorDiffSqear(color,cols[i-1][j]) > minSqearDiff) {
         return true;
@@ -188,7 +189,7 @@ bool shouldAntiAlias(glm::vec3 cols[NUMDIV][NUMDIV], int i, int j) {
 
 bool shouldSubDivide(glm::vec3 color[4], int n) {
     for (int i = 0; i < 4; i++) {
-        if (i != n && calculateColorDiffSqear(color[n],color[i]) < 0.1) {
+        if (i != n && calculateColorDiffSqear(color[n],color[i]) < minSqearDiff) {
             return false;
         }
     }
@@ -226,20 +227,30 @@ glm::vec3 subDivide(float cellX, float cellY, float xMin, float yMin, int step, 
     if (step >= MAX_SUBDIV_STEP) {
         return getAvgColor(colors);
     }
+    glm::vec3 newColors[4];
 
     if (shouldSubDivide(colors,0)) { // y=x=0
-        colors[0] = subDivide(cellX/2,cellY/2,xMin,yMin,step+1,eye);
+        newColors[0] = subDivide(cellX/2,cellY/2,xMin,yMin,step+1,eye);
+    } else {
+        newColors[0] = colors[0];
     }
     if (shouldSubDivide(colors,1)) { // y=1
-        colors[1] = subDivide(cellX/2,cellY/2,xMin,yMin+cellY,step+1,eye);
+        newColors[1] = subDivide(cellX/2,cellY/2,xMin,yMin+cellY,step+1,eye);
+    } else {
+        newColors[1] = colors[1];
     }
     if (shouldSubDivide(colors,2)) { // x=1 y=0
-        colors[2] = subDivide(cellX/2,cellY/2,xMin+cellX,yMin,step+1,eye);
+        newColors[2] = subDivide(cellX/2,cellY/2,xMin+cellX,yMin,step+1,eye);
+    } else {
+        newColors[2] = colors[2];
     }
     if (shouldSubDivide(colors,2)) { // x=1 y=1
-        colors[3] = subDivide(cellX/2,cellY/2,xMin+cellX,yMin+cellY,step+1,eye);
+        newColors[3] = subDivide(cellX/2,cellY/2,xMin+cellX,yMin+cellY,step+1,eye);
+    } else {
+        newColors[3] = colors[3];
     }
-    return getAvgColor(colors);
+
+    return getAvgColor(newColors);
 }
 
 //---The main display module -----------------------------------------------------------
